@@ -256,7 +256,7 @@ export default function App() {
   const existingUsers = Object.keys(rsvpData).sort();
 
   // --- Views ---
-  const LoginView = () => (
+  const renderLoginView = () => (
     <div className="flex flex-col items-center justify-center min-h-[60vh] p-4 relative z-10">
       {/* 主要登入區塊 */}
       <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-t-4 border-emerald-500 relative z-10 mb-6">
@@ -277,6 +277,7 @@ export default function App() {
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               placeholder="例如：小明"
               maxLength={20}
+              autoFocus
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-lg focus:border-emerald-500 focus:outline-none transition-colors"
             />
           </div>
@@ -322,7 +323,7 @@ export default function App() {
     </div>
   );
 
-  const CalendarView = () => (
+  const renderCalendarView = () => (
     <div className="max-w-4xl mx-auto pb-20 relative z-10">
       <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-200">
         <div className="bg-emerald-600 p-4 text-white flex justify-between items-center sticky top-0 z-10">
@@ -435,7 +436,7 @@ export default function App() {
     </div>
   );
 
-  const StatsView = () => (
+  const renderStatsView = () => (
     <div className="max-w-2xl mx-auto relative z-10">
       <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6 border-b pb-4">
@@ -529,9 +530,9 @@ export default function App() {
           </div>
         ) : (
           <>
-            {view === 'login' && <LoginView />}
-            {view === 'calendar' && <CalendarView />}
-            {view === 'stats' && <StatsView />}
+            {view === 'login' && renderLoginView()}
+            {view === 'calendar' && renderCalendarView()}
+            {view === 'stats' && renderStatsView()}
           </>
         )}
       </main>
