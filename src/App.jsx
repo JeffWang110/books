@@ -44,7 +44,7 @@ const appId = 'books-app';
 const generateDateRange = () => {
   const dates = [];
   const start = new Date(2026, 1, 1);
-  const end = new Date(2026, 2, 31);
+  const end = new Date(2026, 5, 30);
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     dates.push(new Date(d));
   }
@@ -354,7 +354,8 @@ export default function App() {
             <span>請點選您可以參加讀書會的日期（綠色代表已選取）。記得按下右上角的「儲存」！</span>
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* 2月 */}
             <div>
               <h3 className="text-center font-bold text-xl text-gray-800 mb-3 bg-gray-100 py-2 rounded">2月 February</h3>
               <div className="grid grid-cols-7 gap-1 text-center mb-1 font-bold">
@@ -393,6 +394,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* 3月 */}
             <div>
               <h3 className="text-center font-bold text-xl text-gray-800 mb-3 bg-gray-100 py-2 rounded">3月 March</h3>
               <div className="grid grid-cols-7 gap-1 text-center mb-1 font-bold">
@@ -402,6 +404,123 @@ export default function App() {
               </div>
               <div className="grid grid-cols-7 gap-2">
                 {ALL_DATES.filter(d => d.getMonth() === 2).map(date => {
+                  const dStr = formatDate(date);
+                  const isSelected = myDates.has(dStr);
+                  const dayName = getDayName(date);
+                  const isWeekend = dayName === '週六' || dayName === '週日';
+
+                  return (
+                    <button
+                      key={dStr}
+                      onClick={() => toggleDate(dStr)}
+                      className={`
+                        aspect-square rounded flex flex-col items-center justify-center text-sm relative transition-all
+                        ${isSelected
+                          ? 'bg-green-500 text-white shadow-sm transform scale-105'
+                          : isWeekend ? 'bg-emerald-50 text-gray-800 hover:bg-emerald-100' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      <span className="font-bold">{date.getDate()}</span>
+                      {stats.dateCounts[dStr] > 0 && !isSelected && (
+                        <span className="absolute bottom-1 right-1 text-[10px] bg-white border border-gray-300 text-gray-800 rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                          {stats.dateCounts[dStr]}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 4月 */}
+            <div>
+              <h3 className="text-center font-bold text-xl text-gray-800 mb-3 bg-gray-100 py-2 rounded">4月 April</h3>
+              <div className="grid grid-cols-7 gap-1 text-center mb-1 font-bold">
+                {['日','一','二','三','四','五','六'].map(d => (
+                  <div key={d} className="text-xs text-gray-500">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {ALL_DATES.filter(d => d.getMonth() === 3).map(date => {
+                  const dStr = formatDate(date);
+                  const isSelected = myDates.has(dStr);
+                  const dayName = getDayName(date);
+                  const isWeekend = dayName === '週六' || dayName === '週日';
+
+                  return (
+                    <button
+                      key={dStr}
+                      onClick={() => toggleDate(dStr)}
+                      className={`
+                        aspect-square rounded flex flex-col items-center justify-center text-sm relative transition-all
+                        ${isSelected
+                          ? 'bg-green-500 text-white shadow-sm transform scale-105'
+                          : isWeekend ? 'bg-emerald-50 text-gray-800 hover:bg-emerald-100' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      <span className="font-bold">{date.getDate()}</span>
+                      {stats.dateCounts[dStr] > 0 && !isSelected && (
+                        <span className="absolute bottom-1 right-1 text-[10px] bg-white border border-gray-300 text-gray-800 rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                          {stats.dateCounts[dStr]}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 5月 */}
+            <div>
+              <h3 className="text-center font-bold text-xl text-gray-800 mb-3 bg-gray-100 py-2 rounded">5月 May</h3>
+              <div className="grid grid-cols-7 gap-1 text-center mb-1 font-bold">
+                {['日','一','二','三','四','五','六'].map(d => (
+                  <div key={d} className="text-xs text-gray-500">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {ALL_DATES.filter(d => d.getMonth() === 4).map(date => {
+                  const dStr = formatDate(date);
+                  const isSelected = myDates.has(dStr);
+                  const dayName = getDayName(date);
+                  const isWeekend = dayName === '週六' || dayName === '週日';
+
+                  return (
+                    <button
+                      key={dStr}
+                      onClick={() => toggleDate(dStr)}
+                      className={`
+                        aspect-square rounded flex flex-col items-center justify-center text-sm relative transition-all
+                        ${isSelected
+                          ? 'bg-green-500 text-white shadow-sm transform scale-105'
+                          : isWeekend ? 'bg-emerald-50 text-gray-800 hover:bg-emerald-100' : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                        }
+                      `}
+                    >
+                      <span className="font-bold">{date.getDate()}</span>
+                      {stats.dateCounts[dStr] > 0 && !isSelected && (
+                        <span className="absolute bottom-1 right-1 text-[10px] bg-white border border-gray-300 text-gray-800 rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                          {stats.dateCounts[dStr]}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 6月 */}
+            <div>
+              <h3 className="text-center font-bold text-xl text-gray-800 mb-3 bg-gray-100 py-2 rounded">6月 June</h3>
+              <div className="grid grid-cols-7 gap-1 text-center mb-1 font-bold">
+                {['日','一','二','三','四','五','六'].map(d => (
+                  <div key={d} className="text-xs text-gray-500">{d}</div>
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-2">
+                {ALL_DATES.filter(d => d.getMonth() === 5).map(date => {
                   const dStr = formatDate(date);
                   const isSelected = myDates.has(dStr);
                   const dayName = getDayName(date);
@@ -516,7 +635,7 @@ export default function App() {
               <Calendar size={14} /> 時間登記表
             </span>
             <span className="bg-white/20 px-3 py-1 rounded">
-              2026年2月～3月
+              2026年2月～6月
             </span>
           </div>
         </div>
@@ -538,7 +657,7 @@ export default function App() {
       </main>
 
       <footer className="text-center text-gray-400 text-xs py-8 relative z-10">
-        2026.2.1 ～ 2026.3.31 讀書會時間登記 <br/>
+        2026.2.1 ～ 2026.6.30 讀書會時間登記 <br/>
         讀書會天地
       </footer>
     </div>
