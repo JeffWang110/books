@@ -364,6 +364,7 @@ export default function App() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
+                {Array.from({length: new Date(2026, 1, 1).getDay()}, (_, i) => <div key={`e1-${i}`} />)}
                 {ALL_DATES.filter(d => d.getMonth() === 1).map(date => {
                   const dStr = formatDate(date);
                   const isSelected = myDates.has(dStr);
@@ -403,6 +404,7 @@ export default function App() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
+                {Array.from({length: new Date(2026, 2, 1).getDay()}, (_, i) => <div key={`e2-${i}`} />)}
                 {ALL_DATES.filter(d => d.getMonth() === 2).map(date => {
                   const dStr = formatDate(date);
                   const isSelected = myDates.has(dStr);
@@ -442,6 +444,7 @@ export default function App() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
+                {Array.from({length: new Date(2026, 3, 1).getDay()}, (_, i) => <div key={`e3-${i}`} />)}
                 {ALL_DATES.filter(d => d.getMonth() === 3).map(date => {
                   const dStr = formatDate(date);
                   const isSelected = myDates.has(dStr);
@@ -481,6 +484,7 @@ export default function App() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
+                {Array.from({length: new Date(2026, 4, 1).getDay()}, (_, i) => <div key={`e4-${i}`} />)}
                 {ALL_DATES.filter(d => d.getMonth() === 4).map(date => {
                   const dStr = formatDate(date);
                   const isSelected = myDates.has(dStr);
@@ -520,6 +524,7 @@ export default function App() {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-2">
+                {Array.from({length: new Date(2026, 5, 1).getDay()}, (_, i) => <div key={`e5-${i}`} />)}
                 {ALL_DATES.filter(d => d.getMonth() === 5).map(date => {
                   const dStr = formatDate(date);
                   const isSelected = myDates.has(dStr);
