@@ -6,1154 +6,216 @@
 <meta name="theme-color" content="#060d18">
 <title>讀書會天地 · 數位互動總站 | 選書投票 × 時間星曆 × AI 評鑑 × 專題共學</title>
 <style>
-  :root {
-    --bg-deep: #060d18;
-    --bg-panel: rgba(10, 20, 38, 0.78);
-    --bg-panel-strong: rgba(7, 14, 28, 0.93);
-    --bg-card: rgba(16, 30, 54, 0.68);
-    --bg-card-hover: rgba(24, 44, 78, 0.84);
-    --border-subtle: rgba(125, 211, 252, 0.16);
-    --border-glow: rgba(56, 189, 248, 0.48);
-    --text-main: #f0f7ff;
-    --text-body: #cbd5e1;
-    --text-muted: #94a3b8;
-    --accent-cyan: #38bdf8;
-    --accent-emerald: #34d399;
-    --accent-amber: #fbbf24;
-    --accent-rose: #fb7185;
-    --accent-violet: #a78bfa;
-    --font-sans: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body {
-    width: 100%;
-    min-height: 100%;
-    background: var(--bg-deep);
-    color: var(--text-main);
-    font-family: var(--font-sans);
-    line-height: 1.65;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: clip;
-    scroll-behavior: smooth;
-  }
-  /* ==========================================================================
-     1. AMBIENT 3D PROCEDURAL CANVAS (Blurred in Portal Mode, Sharp in Hub)
-     ========================================================================== */
-  #ambient-canvas {
-    position: fixed;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 0;
-    pointer-events: none;
-    transition: filter 1.1s cubic-bezier(0.22, 1, 0.36, 1), transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 1.1s ease;
-  }
-  body.portal-active #ambient-canvas {
-    filter: blur(10px) brightness(0.72) saturate(1.25);
-    transform: scale(1.06);
-  }
-  body.portal-active #main-shell,
-  body.portal-active #hud-header {
-    opacity: 0;
-    pointer-events: none;
-  }
-  body.pure-canvas-mode #ambient-canvas {
-    pointer-events: auto;
-    cursor: grab;
-  }
-  body.pure-canvas-mode #ambient-canvas:active {
-    cursor: grabbing;
-  }
-  .vignette-layer {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background:
-      radial-gradient(circle at 50% 35%, transparent 32%, rgba(4, 9, 18, 0.72) 100%),
-      linear-gradient(180deg, rgba(6, 13, 24, 0.55) 0%, transparent 18%, transparent 82%, rgba(6, 13, 24, 0.85) 100%);
-  }
-  /* ==========================================================================
-     2. PORTAL OVERLAY (Pre-warmed Entry Screen)
-     ========================================================================== */
-  #portal-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    transition: opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.75s ease;
-  }
-  body:not(.portal-active) #portal-overlay {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-  }
-  .portal-box {
-    max-width: 680px;
-    width: 100%;
-    background: rgba(8, 17, 34, 0.84);
-    border: 1px solid rgba(56, 189, 248, 0.32);
-    border-radius: 24px;
-    padding: 36px 32px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.65), 0 0 40px rgba(56, 189, 248, 0.12);
-    text-align: center;
-  }
-  .portal-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 14px;
-    border-radius: 999px;
-    background: rgba(52, 211, 153, 0.14);
-    border: 1px solid rgba(52, 211, 153, 0.4);
-    color: var(--accent-emerald);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.06em;
-    margin-bottom: 16px;
-  }
-  .portal-title {
-    font-size: clamp(26px, 4.5vw, 40px);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, #ffffff 0%, #bae6fd 52%, #6ee7b7 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-  .portal-sub {
-    font-size: 15px;
-    color: var(--text-body);
-    max-width: 540px;
-    margin: 0 auto 24px;
-  }
-  .portal-kpi-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 24px;
-  }
-  .portal-kpi {
-    background: rgba(15, 29, 54, 0.72);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 10px 8px;
-  }
-  .portal-kpi .num {
-    font-family: var(--font-mono);
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--accent-cyan);
-  }
-  .portal-kpi .lbl {
-    font-size: 11.5px;
-    color: var(--text-muted);
-    margin-top: 2px;
-  }
-  .portal-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 18px;
-  }
-  .portal-cta {
-    appearance: none;
-    border: none;
-    cursor: pointer;
-    padding: 14px 28px;
-    border-radius: 999px;
-    font-size: 15.5px;
-    font-weight: 700;
-    color: #04101e;
-    background: linear-gradient(135deg, #38bdf8 0%, #34d399 100%);
-    box-shadow: 0 10px 30px rgba(52, 211, 153, 0.32);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .portal-cta:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 36px rgba(56, 189, 248, 0.45);
-  }
-  .portal-quick-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    text-align: left;
-    margin-top: 12px;
-  }
-  .portal-quick-btn {
-    background: rgba(16, 30, 56, 0.65);
-    border: 1px solid var(--border-subtle);
-    border-radius: 10px;
-    padding: 10px 12px;
-    color: var(--text-body);
-    font-size: 12.5px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: border-color 0.2s, background 0.2s;
-  }
-  .portal-quick-btn:hover {
-    border-color: var(--accent-cyan);
-    background: rgba(24, 44, 78, 0.85);
-    color: #fff;
-  }
-  /* ==========================================================================
-     3. TOP HUD BAR (Navigation + Sync Status + Audio + Quality + Pure View)
-     ========================================================================== */
-  #hud-header {
-    position: sticky;
-    top: 0;
-    z-index: 30;
-    background: rgba(6, 13, 26, 0.82);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border-subtle);
-    transition: transform 0.4s ease, opacity 0.4s ease;
-  }
-  .hud-inner {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 10px 18px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .brand-lockup {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .brand-orb {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(52, 211, 153, 0.25));
-    border: 1px solid rgba(56, 189, 248, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 17px;
-  }
-  .brand-title {
-    font-size: 15.5px;
-    font-weight: 800;
-    letter-spacing: -0.01em;
-    color: #fff;
-  }
-  .brand-sub {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    color: var(--text-muted);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .sync-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent-emerald);
-    box-shadow: 0 0 8px var(--accent-emerald);
-    display: inline-block;
-  }
-  .sync-dot.offline {
-    background: var(--accent-amber);
-    box-shadow: 0 0 8px var(--accent-amber);
-  }
-  /* Landmark Navigation Pills */
-  .landmark-nav {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .landmark-btn {
-    appearance: none;
-    background: rgba(16, 30, 54, 0.72);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-body);
-    padding: 7px 13px;
-    border-radius: 999px;
-    font-size: 12.5px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-  }
-  .landmark-btn .idx {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    padding: 1px 6px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--accent-cyan);
-  }
-  .landmark-btn:hover {
-    border-color: rgba(56, 189, 248, 0.45);
-    color: #fff;
-  }
-  .landmark-btn.active {
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.24), rgba(52, 211, 153, 0.22));
-    border-color: var(--accent-cyan);
-    color: #fff;
-    box-shadow: 0 0 18px rgba(56, 189, 248, 0.22);
-  }
-  /* Utility Controls */
-  .hud-controls {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .ctrl-pill {
-    appearance: none;
-    background: rgba(15, 28, 50, 0.78);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-body);
-    padding: 6px 11px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-family: var(--font-mono);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-  }
-  .ctrl-pill:hover {
-    border-color: var(--accent-cyan);
-    color: #fff;
-  }
-  .ctrl-pill.active-on {
-    border-color: var(--accent-emerald);
-    color: var(--accent-emerald);
-    background: rgba(52, 211, 153, 0.14);
-  }
-  /* ==========================================================================
-     4. MAIN WORKSPACE CONTAINER & LANDMARK BANNER
-     ========================================================================== */
-  #main-shell {
-    position: relative;
-    z-index: 10;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 20px 18px 80px;
-    transition: opacity 0.45s ease, transform 0.45s ease;
-  }
-  body.pure-canvas-mode #main-shell {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(16px);
-  }
-  .landmark-banner {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-subtle);
-    border-radius: 20px;
-    padding: 18px 22px;
-    margin-bottom: 20px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  .landmark-info-tag {
-    font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: var(--accent-cyan);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .landmark-info-title {
-    font-size: clamp(20px, 2.8vw, 26px);
-    font-weight: 800;
-    color: #fff;
-    margin: 2px 0 4px;
-  }
-  .landmark-info-desc {
-    font-size: 13.5px;
-    color: var(--text-body);
-  }
-  .kpi-strip {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-  .kpi-chip {
-    background: rgba(15, 29, 54, 0.75);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 8px 14px;
-    min-width: 98px;
-    text-align: center;
-  }
-  .kpi-chip .val {
-    font-family: var(--font-mono);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--accent-emerald);
-  }
-  .kpi-chip .lbl {
-    font-size: 11px;
-    color: var(--text-muted);
-  }
-  /* Tab View Panels */
-  .tab-panel {
-    display: none;
-    animation: fadeSlide 0.35s ease;
-  }
-  .tab-panel.active {
-    display: block;
-  }
-  @keyframes fadeSlide {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  /* ==========================================================================
-     5. TAB 1: BOOK VOTE + JEV/GEMINI AI ANALYSIS
-     ========================================================================== */
-  .panel-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-subtle);
-    border-radius: 20px;
-    padding: 20px;
-    margin-bottom: 18px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-  }
-  .section-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid rgba(125, 211, 252, 0.12);
-  }
-  .section-title {
-    font-size: 16.5px;
-    font-weight: 700;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .voter-grid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-  }
-  .voter-chip {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 10px 12px;
-    transition: border-color 0.2s;
-  }
-  .voter-chip.active-user {
-    border-color: var(--accent-emerald);
-    box-shadow: 0 0 14px rgba(52, 211, 153, 0.2);
-  }
-  .voter-input {
-    width: 100%;
-    background: rgba(6, 13, 26, 0.7);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    border-radius: 8px;
-    padding: 6px 9px;
-    color: #fff;
-    font-size: 13.5px;
-    font-weight: 600;
-    margin-bottom: 6px;
-  }
-  .voter-input:focus {
-    outline: none;
-    border-color: var(--accent-cyan);
-  }
-  .voter-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 11.5px;
-    font-family: var(--font-mono);
-  }
-  .vote-badge-ok { color: var(--accent-emerald); }
-  .vote-badge-warn { color: var(--accent-amber); }
-  .vote-badge-zero { color: var(--text-muted); }
-  /* Filter & Toolbar */
-  .filter-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-  }
-  .filter-pills {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .filter-pill {
-    appearance: none;
-    background: rgba(16, 30, 54, 0.65);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-body);
-    padding: 5px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .filter-pill.active {
-    background: rgba(56, 189, 248, 0.22);
-    border-color: var(--accent-cyan);
-    color: #fff;
-    font-weight: 600;
-  }
-  /* Book Cards Grid */
-  .book-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-  }
-  .book-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 12px;
-    transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
-    position: relative;
-    overflow: hidden;
-  }
-  .book-card:hover {
-    border-color: rgba(56, 189, 248, 0.42);
-    background: var(--bg-card-hover);
-  }
-  .book-card.top-book {
-    border-color: rgba(52, 211, 153, 0.55);
-    box-shadow: 0 0 24px rgba(52, 211, 153, 0.14);
-  }
-  .book-top-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  .book-rank-tag {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: rgba(56, 189, 248, 0.14);
-    color: var(--accent-cyan);
-    display: inline-block;
-    margin-bottom: 5px;
-  }
-  .book-card.top-book .book-rank-tag {
-    background: rgba(52, 211, 153, 0.2);
-    color: var(--accent-emerald);
-  }
-  .book-title-link {
-    font-size: 15.5px;
-    font-weight: 700;
-    color: #fff;
-    text-decoration: none;
-    line-height: 1.4;
-    display: block;
-  }
-  .book-title-link:hover {
-    color: var(--accent-cyan);
-    text-decoration: underline;
-  }
-  .book-score-box {
-    background: rgba(6, 13, 26, 0.72);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 8px 12px;
-    text-align: center;
-    min-width: 64px;
-    flex-shrink: 0;
-  }
-  .book-score-box .num {
-    font-family: var(--font-mono);
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--accent-cyan);
-    line-height: 1.1;
-  }
-  .book-card.top-book .book-score-box .num {
-    color: var(--accent-emerald);
-  }
-  .book-score-box .lbl {
-    font-size: 10.5px;
-    color: var(--text-muted);
-  }
-  .book-progress {
-    height: 5px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  .book-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #38bdf8, #34d399);
-    border-radius: 999px;
-    transition: width 0.35s ease;
-  }
-  /* AI Structured Analysis Badges */
-  .jev-box {
-    background: rgba(7, 15, 30, 0.68);
-    border: 1px solid rgba(167, 139, 250, 0.24);
-    border-radius: 10px;
-    padding: 9px 11px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    font-size: 11.5px;
-  }
-  .jev-cat {
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: rgba(167, 139, 250, 0.18);
-    color: #ddd6fe;
-    font-weight: 600;
-  }
-  .jev-metric {
-    color: var(--text-body);
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-  .jev-spark {
-    padding: 2px 7px;
-    border-radius: 6px;
-    background: rgba(251, 191, 36, 0.16);
-    color: var(--accent-amber);
-    font-weight: 600;
-  }
-  /* 5-Voter Interactive Row */
-  .vote-circle-row {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 6px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
-  }
-  .vote-btn {
-    appearance: none;
-    background: rgba(8, 16, 32, 0.72);
-    border: 1px solid rgba(148, 163, 184, 0.24);
-    border-radius: 10px;
-    padding: 7px 4px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-muted);
-    font-size: 11px;
-    transition: all 0.18s ease;
-  }
-  .vote-btn:hover {
-    border-color: var(--accent-cyan);
-    color: #fff;
-  }
-  .vote-btn.voted {
-    background: rgba(52, 211, 153, 0.2);
-    border-color: var(--accent-emerald);
-    color: #fff;
-    font-weight: 700;
-  }
-  .vote-ring {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    border: 1.5px solid rgba(148, 163, 184, 0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-  }
-  .vote-btn.voted .vote-ring {
-    background: var(--accent-emerald);
-    border-color: var(--accent-emerald);
-    color: #04101e;
-  }
-  /* ==========================================================================
-     6. TAB 2: MEMBER AVAILABILITY CALENDAR (books.jeffwang.work Reset)
-     ========================================================================== */
-  .member-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    background: rgba(12, 25, 46, 0.78);
-    border: 1px solid var(--border-subtle);
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
-  }
-  .member-chips {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .member-chip-btn {
-    appearance: none;
-    background: rgba(16, 32, 58, 0.8);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-body);
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 12.5px;
-    cursor: pointer;
-    transition: all 0.18s ease;
-  }
-  .member-chip-btn:hover {
-    border-color: var(--accent-cyan);
-    color: #fff;
-  }
-  .member-chip-btn.selected {
-    background: linear-gradient(135deg, rgba(52, 211, 153, 0.26), rgba(56, 189, 248, 0.24));
-    border-color: var(--accent-emerald);
-    color: #fff;
-    font-weight: 700;
-  }
-  .calendar-months-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-  }
-  .month-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 16px;
-    padding: 14px;
-  }
-  .month-title {
-    text-align: center;
-    font-size: 15px;
-    font-weight: 700;
-    color: #fff;
-    background: rgba(56, 189, 248, 0.12);
-    border-radius: 10px;
-    padding: 7px;
-    margin-bottom: 10px;
-    font-family: var(--font-mono);
-  }
-  .weekday-row {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-    font-weight: 600;
-  }
-  .days-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-  }
-  .day-cell {
-    aspect-ratio: 1 / 1;
-    border-radius: 9px;
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    background: rgba(8, 16, 32, 0.65);
-    color: var(--text-body);
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.15s ease;
-  }
-  .day-cell.weekend {
-    background: rgba(16, 38, 60, 0.72);
-    border-color: rgba(56, 189, 248, 0.24);
-  }
-  .day-cell:hover {
-    border-color: var(--accent-cyan);
-    transform: translateY(-1px);
-  }
-  .day-cell.my-selected {
-    background: linear-gradient(135deg, #10b981, #059669);
-    border-color: #6ee7b7;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
-  }
-  .day-count-dot {
-    font-size: 9.5px;
-    padding: 0 4px;
-    border-radius: 999px;
-    background: rgba(56, 189, 248, 0.22);
-    color: #bae6fd;
-    margin-top: 1px;
-    line-height: 1.3;
-  }
-  .day-cell.my-selected .day-count-dot {
-    background: rgba(4, 16, 30, 0.45);
-    color: #fff;
-  }
-  /* ==========================================================================
-     7. TAB 3: CONSENSUS LEADERBOARD & SESSION POLL TABLE
-     ========================================================================== */
-  .consensus-split {
-    display: grid;
-    grid-template-columns: 1.15fr 1fr;
-    gap: 18px;
-  }
-  .rank-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-  }
-  .rank-medal {
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--font-mono);
-    font-weight: 800;
-    font-size: 14px;
-    flex-shrink: 0;
-  }
-  .rank-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #050b14; }
-  .rank-2 { background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #050b14; }
-  .rank-3 { background: linear-gradient(135deg, #fb923c, #ea580c); color: #050b14; }
-  .rank-n { background: rgba(56, 189, 248, 0.16); color: var(--accent-cyan); }
-  .session-table-wrap {
-    overflow-x: auto;
-  }
-  .session-table, .date-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13.5px;
-  }
-  .session-table th, .session-table td,
-  .date-table th, .date-table td {
-    padding: 12px 10px;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.14);
-    text-align: center;
-    white-space: nowrap;
-  }
-  .date-table th {
-    color: var(--text-muted);
-    font-weight: 600;
-    font-size: 12.5px;
-  }
-  .session-table th:first-child, .session-table td:first-child,
-  .date-table th:first-child, .date-table td:first-child {
-    text-align: left;
-  }
-  .session-table tr.best-row,
-  .date-table tr.best-date {
-    background: rgba(212, 162, 74, 0.08);
-  }
-  .best-badge {
-    display: inline-block;
-    margin-left: 8px;
-    padding: 2px 8px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #fbbf24, #d97706);
-    color: #1a1205;
-    font-size: 11.5px;
-    font-weight: 800;
-    vertical-align: middle;
-  }
-  .date-add-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .date-add-stack .input-field {
-    width: 100%;
-    padding: 11px 14px;
-    font-size: 14px;
-    background: rgba(10, 18, 34, 0.85);
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    border-radius: 10px;
-  }
-  .date-add-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 11px 16px;
-    font-size: 14px;
-    background: rgba(15, 26, 46, 0.85);
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    border-radius: 10px;
-    color: #fff;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
-  }
-  .date-add-btn:hover {
-    border-color: var(--accent-emerald);
-    background: rgba(52, 211, 153, 0.16);
-  }
-  .deadline-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
-    font-size: 13.5px;
-    color: var(--text-muted);
-    flex-wrap: wrap;
-  }
-  .date-check {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 2px solid rgba(148, 163, 184, 0.32);
-    background: rgba(10, 18, 34, 0.65);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-    color: transparent;
-    padding: 0;
-  }
-  .date-check:hover {
-    border-color: var(--accent-emerald);
-    transform: scale(1.08);
-  }
-  .date-check.active {
-    background: #22c55e;
-    border-color: #22c55e;
-    color: #09130c;
-    box-shadow: 0 0 14px rgba(34, 197, 94, 0.4);
-  }
-  .date-check svg {
-    width: 15px;
-    height: 15px;
-    stroke-width: 3.2;
-  }
-  .count-cell {
-    font-family: var(--font-mono);
-    font-weight: 800;
-    color: #fff;
-    font-size: 14px;
-  }
-  .btn-remove {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-size: 14px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: all 0.2s;
-  }
-  .btn-remove:hover {
-    color: var(--accent-rose);
-    background: rgba(251, 113, 133, 0.14);
-  }
-  .best-date-info {
-    margin-top: 14px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    background: rgba(34, 197, 94, 0.12);
-    border: 1px solid rgba(34, 197, 94, 0.38);
-    font-size: 13.5px;
-    color: #fff;
-  }
-  /* ==========================================================================
-     8. TAB 4: REWIRE FEATURED STUDY GARDEN & BREATHING PACER
-     ========================================================================== */
-  .study-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-  }
-  .pacer-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 16px;
-    background: rgba(8, 18, 36, 0.72);
-    border: 1px solid var(--border-subtle);
-    border-radius: 16px;
-    text-align: center;
-  }
-  .pacer-orb {
-    width: 118px;
-    height: 118px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(52, 211, 153, 0.48) 0%, rgba(56, 189, 248, 0.16) 65%, transparent 100%);
-    border: 2px solid var(--accent-emerald);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin: 14px 0;
-    transition: transform 0.9s ease, box-shadow 0.9s ease;
-    box-shadow: 0 0 30px rgba(52, 211, 153, 0.25);
-  }
-  .habit-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .habit-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 11px 14px;
-    background: rgba(12, 24, 46, 0.75);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .habit-item.checked {
-    border-color: var(--accent-emerald);
-    background: rgba(16, 185, 129, 0.14);
-  }
-  .action-btn {
-    appearance: none;
-    border: 1px solid rgba(56, 189, 248, 0.45);
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(52, 211, 153, 0.22));
-    color: #fff;
-    font-weight: 700;
-    font-size: 13px;
-    padding: 9px 16px;
-    border-radius: 10px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    text-decoration: none;
-    transition: all 0.2s;
-  }
-  .action-btn:hover {
-    border-color: var(--accent-emerald);
-    box-shadow: 0 0 18px rgba(52, 211, 153, 0.28);
-  }
-  .input-field {
-    background: rgba(6, 13, 26, 0.78);
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    border-radius: 9px;
-    padding: 8px 11px;
-    color: #fff;
-    font-size: 13px;
-  }
-  /* Toast Notification */
-  #toast {
-    position: fixed;
-    bottom: 22px;
-    right: 22px;
-    z-index: 60;
-    background: rgba(7, 16, 32, 0.95);
-    border: 1px solid var(--accent-emerald);
-    color: #fff;
-    padding: 11px 18px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 600;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    transform: translateY(12px);
-    pointer-events: none;
-    transition: all 0.25s ease;
-  }
-  #toast.show {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  /* Pure Canvas Floating Exit Button */
-  #pure-canvas-hint {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 50;
-    background: rgba(7, 15, 30, 0.88);
-    border: 1px solid var(--accent-cyan);
-    color: #fff;
-    padding: 10px 20px;
-    border-radius: 999px;
-    font-size: 13px;
-    display: none;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
-  }
-  body.pure-canvas-mode #pure-canvas-hint {
-    display: inline-flex;
-  }
-  /* ==========================================================================
-     9. RESPONSIVE BREAKPOINTS (Tablet 768px / Mobile 390px)
-     ========================================================================== */
-  @media (max-width: 1024px) {
-    .voter-grid { grid-template-columns: repeat(3, 1fr); }
-    .calendar-months-grid { grid-template-columns: repeat(2, 1fr); }
-    .consensus-split, .study-grid { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 720px) {
-    .portal-box { padding: 24px 18px; }
-    .portal-kpi-row { grid-template-columns: repeat(2, 1fr); }
-    .portal-quick-grid { grid-template-columns: 1fr; }
-    .book-grid { grid-template-columns: 1fr; }
-    .calendar-months-grid { grid-template-columns: 1fr; }
-    .voter-grid { grid-template-columns: repeat(2, 1fr); }
-    .hud-inner { padding: 8px 12px; gap: 8px; }
-    .landmark-btn { padding: 6px 10px; font-size: 11.5px; }
-    .ctrl-pill { padding: 5px 8px; font-size: 11px; }
-    .landmark-banner { padding: 14px 16px; }
-  }
+:root{--bg-deep:#060d18;--bg-panel:rgba(10,20,38,0.78);--bg-panel-strong:rgba(7,14,28,0.93);--bg-card:rgba(16,30,54,0.68);--bg-card-hover:rgba(24,44,78,0.84);--border-subtle:rgba(125,211,252,0.16);--border-glow:rgba(56,189,248,0.48);--text-main:#f0f7ff;--text-body:#cbd5e1;--text-muted:#94a3b8;--accent-cyan:#38bdf8;--accent-emerald:#34d399;--accent-amber:#fbbf24;--accent-rose:#fb7185;--accent-violet:#a78bfa;--font-sans:-apple-system,BlinkMacSystemFont,"PingFang TC","Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif;--font-mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;min-height:100%;background:var(--bg-deep);color:var(--text-main);font-family:var(--font-sans);line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:clip;scroll-behavior:smooth;}
+#ambient-canvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;transition:filter 1.1s cubic-bezier(0.22,1,0.36,1),transform 1.2s cubic-bezier(0.22,1,0.36,1),opacity 1.1s ease;}
+body.portal-active #ambient-canvas{filter:blur(10px) brightness(0.72) saturate(1.25);transform:scale(1.06);}
+body.portal-active #main-shell,body.portal-active #hud-header{opacity:0;pointer-events:none;}
+body.pure-canvas-mode #ambient-canvas{pointer-events:auto;cursor:grab;}
+body.pure-canvas-mode #ambient-canvas:active{cursor:grabbing;}
+.vignette-layer{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 50% 35%,transparent 32%,rgba(4,9,18,0.72) 100%),linear-gradient(180deg,rgba(6,13,24,0.55) 0%,transparent 18%,transparent 82%,rgba(6,13,24,0.85) 100%);}
+#portal-overlay{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity 0.75s cubic-bezier(0.22,1,0.36,1),visibility 0.75s ease;}
+body:not(.portal-active) #portal-overlay{opacity:0;visibility:hidden;pointer-events:none;}
+.portal-box{max-width:680px;width:100%;background:rgba(8,17,34,0.84);border:1px solid rgba(56,189,248,0.32);border-radius:24px;padding:36px 32px;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:0 28px 80px rgba(0,0,0,0.65),0 0 40px rgba(56,189,248,0.12);text-align:center;}
+.portal-badge{display:inline-flex;align-items:center;gap:8px;padding:5px 14px;border-radius:999px;background:rgba(52,211,153,0.14);border:1px solid rgba(52,211,153,0.4);color:var(--accent-emerald);font-family:var(--font-mono);font-size:12px;letter-spacing:0.06em;margin-bottom:16px;}
+.portal-title{font-size:clamp(26px,4.5vw,40px);font-weight:800;letter-spacing:-0.02em;line-height:1.2;margin-bottom:12px;background:linear-gradient(135deg,#ffffff 0%,#bae6fd 52%,#6ee7b7 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.portal-sub{font-size:15px;color:var(--text-body);max-width:540px;margin:0 auto 24px;}
+.portal-kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}
+.portal-kpi{background:rgba(15,29,54,0.72);border:1px solid var(--border-subtle);border-radius:12px;padding:10px 8px;}
+.portal-kpi .num{font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--accent-cyan);}
+.portal-kpi .lbl{font-size:11.5px;color:var(--text-muted);margin-top:2px;}
+.portal-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-bottom:18px;}
+.portal-cta{appearance:none;border:none;cursor:pointer;padding:14px 28px;border-radius:999px;font-size:15.5px;font-weight:700;color:#04101e;background:linear-gradient(135deg,#38bdf8 0%,#34d399 100%);box-shadow:0 10px 30px rgba(52,211,153,0.32);transition:transform 0.2s ease,box-shadow 0.2s ease;}
+.portal-cta:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(56,189,248,0.45);}
+.portal-quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;text-align:left;margin-top:12px;}
+.portal-quick-btn{background:rgba(16,30,56,0.65);border:1px solid var(--border-subtle);border-radius:10px;padding:10px 12px;color:var(--text-body);font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:border-color 0.2s,background 0.2s;}
+.portal-quick-btn:hover{border-color:var(--accent-cyan);background:rgba(24,44,78,0.85);color:#fff;}
+#hud-header{position:sticky;top:0;z-index:30;background:rgba(6,13,26,0.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--border-subtle);transition:transform 0.4s ease,opacity 0.4s ease;}
+.hud-inner{max-width:1280px;margin:0 auto;padding:10px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.brand-lockup{display:flex;align-items:center;gap:10px;}
+.brand-orb{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,rgba(56,189,248,0.25),rgba(52,211,153,0.25));border:1px solid rgba(56,189,248,0.5);display:flex;align-items:center;justify-content:center;font-size:17px;}
+.brand-title{font-size:15.5px;font-weight:800;letter-spacing:-0.01em;color:#fff;}
+.brand-sub{font-family:var(--font-mono);font-size:10.5px;color:var(--text-muted);display:flex;align-items:center;gap:6px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--accent-emerald);box-shadow:0 0 8px var(--accent-emerald);display:inline-block;}
+.sync-dot.offline{background:var(--accent-amber);box-shadow:0 0 8px var(--accent-amber);}
+.landmark-nav{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.landmark-btn{appearance:none;background:rgba(16,30,54,0.72);border:1px solid var(--border-subtle);color:var(--text-body);padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s ease;}
+.landmark-btn .idx{font-family:var(--font-mono);font-size:11px;padding:1px 6px;border-radius:999px;background:rgba(255,255,255,0.08);color:var(--accent-cyan);}
+.landmark-btn:hover{border-color:rgba(56,189,248,0.45);color:#fff;}
+.landmark-btn.active{background:linear-gradient(135deg,rgba(56,189,248,0.24),rgba(52,211,153,0.22));border-color:var(--accent-cyan);color:#fff;box-shadow:0 0 18px rgba(56,189,248,0.22);}
+.hud-controls{display:flex;align-items:center;gap:6px;}
+.ctrl-pill{appearance:none;background:rgba(15,28,50,0.78);border:1px solid var(--border-subtle);color:var(--text-body);padding:6px 11px;border-radius:999px;font-size:12px;font-family:var(--font-mono);cursor:pointer;transition:all 0.2s ease;white-space:nowrap;}
+.ctrl-pill:hover{border-color:var(--accent-cyan);color:#fff;}
+.ctrl-pill.active-on{border-color:var(--accent-emerald);color:var(--accent-emerald);background:rgba(52,211,153,0.14);}
+#main-shell{position:relative;z-index:10;max-width:1280px;margin:0 auto;padding:20px 18px 80px;transition:opacity 0.45s ease,transform 0.45s ease;}
+body.pure-canvas-mode #main-shell{opacity:0;pointer-events:none;transform:translateY(16px);}
+.landmark-banner{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:20px;padding:18px 22px;margin-bottom:20px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.landmark-info-tag{font-family:var(--font-mono);font-size:11.5px;color:var(--accent-cyan);letter-spacing:0.06em;text-transform:uppercase;}
+.landmark-info-title{font-size:clamp(20px,2.8vw,26px);font-weight:800;color:#fff;margin:2px 0 4px;}
+.landmark-info-desc{font-size:13.5px;color:var(--text-body);}
+.kpi-strip{display:flex;gap:10px;flex-wrap:wrap;}
+.kpi-chip{background:rgba(15,29,54,0.75);border:1px solid var(--border-subtle);border-radius:12px;padding:8px 14px;min-width:98px;text-align:center;}
+.kpi-chip .val{font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--accent-emerald);}
+.kpi-chip .lbl{font-size:11px;color:var(--text-muted);}
+.tab-panel{display:none;animation:fadeSlide 0.35s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(8px);}
+to{opacity:1;transform:translateY(0);}
+}
+.panel-card{background:var(--bg-panel);border:1px solid var(--border-subtle);border-radius:20px;padding:20px;margin-bottom:18px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);scroll-margin-top:78px;}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(125,211,252,0.12);}
+.section-title{font-size:16.5px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;}
+.voter-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.voter-chip{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:10px 12px;transition:border-color 0.2s;}
+.voter-chip.active-user{border-color:var(--accent-emerald);box-shadow:0 0 14px rgba(52,211,153,0.2);}
+.voter-input{width:100%;background:rgba(6,13,26,0.7);border:1px solid rgba(148,163,184,0.25);border-radius:8px;padding:6px 9px;color:#fff;font-size:13.5px;font-weight:600;margin-bottom:6px;}
+.voter-input:focus{outline:none;border-color:var(--accent-cyan);}
+.voter-meta{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-family:var(--font-mono);}
+.vote-badge-ok{color:var(--accent-emerald);}
+.vote-badge-warn{color:var(--accent-amber);}
+.vote-badge-zero{color:var(--text-muted);}
+.whitehat-stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.wh-step{background:rgba(10,20,38,0.72);border:1px solid var(--border-subtle);border-radius:12px;padding:10px 12px;cursor:pointer;text-align:left;color:var(--text-body);transition:all 0.2s ease;}
+.wh-step:hover{border-color:var(--accent-cyan);background:rgba(20,38,68,0.85);}
+.wh-step.active{background:linear-gradient(135deg,rgba(56,189,248,0.2),rgba(52,211,153,0.16));border-color:var(--accent-emerald);box-shadow:0 0 18px rgba(52,211,153,0.16);}
+.wh-step-tag{font-family:var(--font-mono);font-size:11px;color:var(--accent-cyan);font-weight:700;display:block;margin-bottom:3px;}
+.wh-step-title{font-size:13.5px;font-weight:700;color:#fff;margin-bottom:3px;}
+.wh-step-desc{font-size:11.5px;color:var(--text-muted);line-height:1.45;}
+.wh-stage-detail{background:rgba(8,17,34,0.82);border:1px solid rgba(56,189,248,0.28);border-radius:12px;padding:12px 15px;margin-bottom:16px;font-size:13px;color:var(--text-body);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.role-cards-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.role-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:16px;padding:14px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;transition:all 0.22s ease;position:relative;}
+.role-card:hover{border-color:rgba(56,189,248,0.48);background:var(--bg-card-hover);transform:translateY(-2px);}
+.role-card.active-role{border-color:var(--accent-emerald);box-shadow:0 0 22px rgba(52,211,153,0.2);}
+.role-header{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.role-avatar{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;border:1px solid rgba(255,255,255,0.18);}
+.role-name{font-size:15.5px;font-weight:800;color:#fff;line-height:1.2;}
+.role-seat{font-size:11.5px;color:var(--accent-cyan);font-weight:600;margin-top:2px;}
+.role-hat-badge{font-family:var(--font-mono);font-size:10.5px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.08);color:#f8fafc;border:1px solid rgba(255,255,255,0.14);display:inline-block;}
+.role-angle-box{background:rgba(6,13,26,0.68);border-left:3px solid var(--accent-cyan);border-radius:6px;padding:7px 9px;font-size:12px;color:#e2e8f0;line-height:1.45;}
+.role-principles-list{list-style:none;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-body);line-height:1.45;}
+.role-principles-list li{background:rgba(9,18,34,0.58);border:1px solid rgba(148,163,184,0.14);border-radius:8px;padding:6px 8px;display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
+.role-prompt-box{background:rgba(52,211,153,0.08);border:1px dashed rgba(52,211,153,0.35);border-radius:8px;padding:7px 9px;font-size:11.5px;color:#a7f3d0;line-height:1.45;}
+.role-add-row{display:flex;gap:5px;margin-top:4px;}
+.role-add-row .input-field{flex:1;min-width:0;padding:5px 8px;font-size:11.5px;}
+.role-add-btn{background:rgba(56,189,248,0.18);border:1px solid rgba(56,189,248,0.4);color:#fff;border-radius:7px;padding:5px 8px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.role-add-btn:hover{background:rgba(52,211,153,0.25);border-color:var(--accent-emerald);}
+.filter-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.filter-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.filter-pill{appearance:none;background:rgba(16,30,54,0.65);border:1px solid var(--border-subtle);color:var(--text-body);padding:5px 12px;border-radius:999px;font-size:12px;cursor:pointer;transition:all 0.2s;}
+.filter-pill.active{background:rgba(56,189,248,0.22);border-color:var(--accent-cyan);color:#fff;font-weight:600;}
+.book-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.book-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;transition:transform 0.2s ease,border-color 0.2s ease,background 0.2s ease;position:relative;overflow:hidden;}
+.book-card:hover{border-color:rgba(56,189,248,0.42);background:var(--bg-card-hover);}
+.book-card.top-book{border-color:rgba(52,211,153,0.55);box-shadow:0 0 24px rgba(52,211,153,0.14);}
+.book-top-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.book-rank-tag{font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(56,189,248,0.14);color:var(--accent-cyan);display:inline-block;margin-bottom:5px;}
+.book-card.top-book .book-rank-tag{background:rgba(52,211,153,0.2);color:var(--accent-emerald);}
+.book-title-link{font-size:15.5px;font-weight:700;color:#fff;text-decoration:none;line-height:1.4;display:block;}
+.book-title-link:hover{color:var(--accent-cyan);text-decoration:underline;}
+.book-score-box{background:rgba(6,13,26,0.72);border:1px solid var(--border-subtle);border-radius:12px;padding:8px 12px;text-align:center;min-width:64px;flex-shrink:0;}
+.book-score-box .num{font-family:var(--font-mono);font-size:22px;font-weight:800;color:var(--accent-cyan);line-height:1.1;}
+.book-card.top-book .book-score-box .num{color:var(--accent-emerald);}
+.book-score-box .lbl{font-size:10.5px;color:var(--text-muted);}
+.book-progress{height:5px;background:rgba(255,255,255,0.08);border-radius:999px;overflow:hidden;}
+.book-progress-bar{height:100%;background:linear-gradient(90deg,#38bdf8,#34d399);border-radius:999px;transition:width 0.35s ease;}
+.jev-box{background:rgba(7,15,30,0.68);border:1px solid rgba(167,139,250,0.24);border-radius:10px;padding:9px 11px;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:11.5px;}
+.jev-cat{padding:2px 8px;border-radius:6px;background:rgba(167,139,250,0.18);color:#ddd6fe;font-weight:600;}
+.jev-metric{color:var(--text-body);display:inline-flex;align-items:center;gap:4px;}
+.jev-spark{padding:2px 7px;border-radius:6px;background:rgba(251,191,36,0.16);color:var(--accent-amber);font-weight:600;}
+.vote-circle-row{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);}
+.vote-btn{appearance:none;background:rgba(8,16,32,0.72);border:1px solid rgba(148,163,184,0.24);border-radius:10px;padding:7px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--text-muted);font-size:11px;transition:all 0.18s ease;}
+.vote-btn:hover{border-color:var(--accent-cyan);color:#fff;}
+.vote-btn.voted{background:rgba(52,211,153,0.2);border-color:var(--accent-emerald);color:#fff;font-weight:700;}
+.vote-ring{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(148,163,184,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;}
+.vote-btn.voted .vote-ring{background:var(--accent-emerald);border-color:var(--accent-emerald);color:#04101e;}
+.member-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:rgba(12,25,46,0.78);border:1px solid var(--border-subtle);border-radius:14px;padding:14px 16px;margin-bottom:16px;}
+.member-chips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.member-chip-btn{appearance:none;background:rgba(16,32,58,0.8);border:1px solid var(--border-subtle);color:var(--text-body);padding:6px 12px;border-radius:999px;font-size:12.5px;cursor:pointer;transition:all 0.18s ease;}
+.member-chip-btn:hover{border-color:var(--accent-cyan);color:#fff;}
+.member-chip-btn.selected{background:linear-gradient(135deg,rgba(52,211,153,0.26),rgba(56,189,248,0.24));border-color:var(--accent-emerald);color:#fff;font-weight:700;}
+.calendar-months-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.month-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:16px;padding:14px;}
+.month-title{text-align:center;font-size:15px;font-weight:700;color:#fff;background:rgba(56,189,248,0.12);border-radius:10px;padding:7px;margin-bottom:10px;font-family:var(--font-mono);}
+.weekday-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:600;}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.day-cell{aspect-ratio:1 / 1;border-radius:9px;border:1px solid rgba(148,163,184,0.15);background:rgba(8,16,32,0.65);color:var(--text-body);font-family:var(--font-mono);font-size:12px;font-weight:600;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all 0.15s ease;}
+.day-cell.weekend{background:rgba(16,38,60,0.72);border-color:rgba(56,189,248,0.24);}
+.day-cell:hover{border-color:var(--accent-cyan);transform:translateY(-1px);}
+.day-cell.my-selected{background:linear-gradient(135deg,#10b981,#059669);border-color:#6ee7b7;color:#fff;box-shadow:0 4px 12px rgba(16,185,129,0.35);}
+.day-count-dot{font-size:9.5px;padding:0 4px;border-radius:999px;background:rgba(56,189,248,0.22);color:#bae6fd;margin-top:1px;line-height:1.3;}
+.day-cell.my-selected .day-count-dot{background:rgba(4,16,30,0.45);color:#fff;}
+.consensus-split{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;}
+.rank-item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:12px 14px;margin-bottom:10px;}
+.rank-medal{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:800;font-size:14px;flex-shrink:0;}
+.rank-1{background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#050b14;}
+.rank-2{background:linear-gradient(135deg,#e2e8f0,#94a3b8);color:#050b14;}
+.rank-3{background:linear-gradient(135deg,#fb923c,#ea580c);color:#050b14;}
+.rank-n{background:rgba(56,189,248,0.16);color:var(--accent-cyan);}
+.session-table-wrap{overflow-x:auto;}
+.session-table,.date-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.session-table th,.session-table td,.date-table th,.date-table td{padding:12px 10px;border-bottom:1px solid rgba(148,163,184,0.14);text-align:center;white-space:nowrap;}
+.date-table th{color:var(--text-muted);font-weight:600;font-size:12.5px;}
+.session-table th:first-child,.session-table td:first-child,.date-table th:first-child,.date-table td:first-child{text-align:left;}
+.session-table tr.best-row,.date-table tr.best-date{background:rgba(212,162,74,0.08);}
+.best-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:6px;background:linear-gradient(135deg,#fbbf24,#d97706);color:#1a1205;font-size:11.5px;font-weight:800;vertical-align:middle;}
+.date-add-stack{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.date-add-stack .input-field{width:100%;padding:11px 14px;font-size:14px;background:rgba(10,18,34,0.85);border:1px solid rgba(148,163,184,0.28);border-radius:10px;}
+.date-add-btn{width:100%;justify-content:center;padding:11px 16px;font-size:14px;background:rgba(15,26,46,0.85);border:1px solid rgba(148,163,184,0.28);border-radius:10px;color:#fff;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;}
+.date-add-btn:hover{border-color:var(--accent-emerald);background:rgba(52,211,153,0.16);}
+.deadline-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;font-size:13.5px;color:var(--text-muted);flex-wrap:wrap;}
+.date-check{width:30px;height:30px;border-radius:50%;border:2px solid rgba(148,163,184,0.32);background:rgba(10,18,34,0.65);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.22s cubic-bezier(0.34,1.56,0.64,1);color:transparent;padding:0;}
+.date-check:hover{border-color:var(--accent-emerald);transform:scale(1.08);}
+.date-check.active{background:#22c55e;border-color:#22c55e;color:#09130c;box-shadow:0 0 14px rgba(34,197,94,0.4);}
+.date-check svg{width:15px;height:15px;stroke-width:3.2;}
+.count-cell{font-family:var(--font-mono);font-weight:800;color:#fff;font-size:14px;}
+.btn-remove{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;padding:4px 8px;border-radius:6px;transition:all 0.2s;}
+.btn-remove:hover{color:var(--accent-rose);background:rgba(251,113,133,0.14);}
+.best-date-info{margin-top:14px;padding:12px 16px;border-radius:12px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.38);font-size:13.5px;color:#fff;}
+.study-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.pacer-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;background:rgba(8,18,36,0.72);border:1px solid var(--border-subtle);border-radius:16px;text-align:center;}
+.pacer-orb{width:118px;height:118px;border-radius:50%;background:radial-gradient(circle,rgba(52,211,153,0.48) 0%,rgba(56,189,248,0.16) 65%,transparent 100%);border:2px solid var(--accent-emerald);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:14px 0;transition:transform 0.9s ease,box-shadow 0.9s ease;box-shadow:0 0 30px rgba(52,211,153,0.25);}
+.habit-list{display:flex;flex-direction:column;gap:8px;}
+.habit-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;background:rgba(12,24,46,0.75);border:1px solid var(--border-subtle);border-radius:12px;cursor:pointer;transition:all 0.2s;}
+.habit-item.checked{border-color:var(--accent-emerald);background:rgba(16,185,129,0.14);}
+.action-btn{appearance:none;border:1px solid rgba(56,189,248,0.45);background:linear-gradient(135deg,rgba(56,189,248,0.22),rgba(52,211,153,0.22));color:#fff;font-weight:700;font-size:13px;padding:9px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;transition:all 0.2s;}
+.action-btn:hover{border-color:var(--accent-emerald);box-shadow:0 0 18px rgba(52,211,153,0.28);}
+.input-field{background:rgba(6,13,26,0.78);border:1px solid rgba(148,163,184,0.3);border-radius:9px;padding:8px 11px;color:#fff;font-size:13px;}
+#toast{position:fixed;bottom:22px;right:22px;z-index:60;background:rgba(7,16,32,0.95);border:1px solid var(--accent-emerald);color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 12px 32px rgba(0,0,0,0.5);opacity:0;transform:translateY(12px);pointer-events:none;transition:all 0.25s ease;}
+#toast.show{opacity:1;transform:translateY(0);}
+#pure-canvas-hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:50;background:rgba(7,15,30,0.88);border:1px solid var(--accent-cyan);color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;display:none;align-items:center;gap:10px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,0.6);}
+body.pure-canvas-mode #pure-canvas-hint{display:inline-flex;}
+@media (max-width:1120px){.role-cards-grid{grid-template-columns:repeat(3,1fr);}
+.whitehat-stepper{grid-template-columns:repeat(2,1fr);}
+}
+@media (max-width:1024px){.voter-grid{grid-template-columns:repeat(3,1fr);}
+.calendar-months-grid{grid-template-columns:repeat(2,1fr);}
+.consensus-split,.study-grid{grid-template-columns:1fr;}
+}
+@media (max-width:720px){.portal-box{padding:24px 18px;}
+.portal-kpi-row{grid-template-columns:repeat(2,1fr);}
+.portal-quick-grid{grid-template-columns:1fr;}
+.book-grid{grid-template-columns:1fr;}
+.calendar-months-grid{grid-template-columns:1fr;}
+.voter-grid{grid-template-columns:repeat(2,1fr);}
+.role-cards-grid{grid-template-columns:1fr;}
+.whitehat-stepper{grid-template-columns:1fr;}
+.hud-inner{padding:8px 12px;gap:8px;}
+.landmark-btn{padding:6px 10px;font-size:11.5px;}
+.ctrl-pill{padding:5px 8px;font-size:11px;}
+.landmark-banner{padding:14px 16px;}
+}
 </style>
 </head>
-<body class="portal-active">
-<!-- 1. Zero-Asset Procedural 3D Canvas -->
+<body>
 <canvas id="ambient-canvas"></canvas>
 <div class="vignette-layer"></div>
-<!-- 2. Portal Entry Overlay (Pre-warmed Blurred 3D World Behind) -->
 <div id="portal-overlay">
   <div class="portal-box">
     <div class="portal-badge">✦ ZERO-ASSET 3D × WEB AUDIO × FIREBASE RTDB SYNC</div>
     <h1 class="portal-title">讀書會天地 · 數位互動總站</h1>
     <p class="portal-sub">
-      整合「📅 讀書會日期選擇（直觀圓圈勾選表）」與「📚 候選書籍投票 × Jev AI 評鑑」。<br>
+      整合「📅 讀書會日期選擇」與「🎩 白帽實證迭代 × 五成員原則角色卡 × 候選書投票」。<br>
       鎖定五位核心成員（Jeff、Ruby、登正、忠誠、陳健），與原 Firebase 即時資料庫雙向同步。
     </p>
     <div class="portal-kpi-row">
@@ -1176,12 +238,12 @@
     </div>
     <div class="portal-actions">
       <button class="portal-cta" id="enter-btn" data-enter-portal onclick="enterHub(0)">
-        潛入讀書會星雲 · Enter Hub (開啟音場)
+        進入讀書會總站 · Enter Hub (開啟音場)
       </button>
     </div>
     <div class="portal-quick-grid">
       <button class="portal-quick-btn" onclick="enterHub(0)">
-        <span>①</span> <span><strong>選書＆日期總覽</strong> · 原版直觀日期勾選表 ＋ 8 本候選書投票</span>
+        <span>①</span> <span><strong>選書＆角色原則卡</strong> · 場次打勾表 ＋ 五成員原則角色卡 ＋ 8 本候選書</span>
       </button>
       <button class="portal-quick-btn" onclick="enterHub(1)">
         <span>②</span> <span><strong>讀書會日期選擇</strong> · 專場日期圓圈打勾表決與五成員月曆</span>
@@ -1195,7 +257,6 @@
     </div>
   </div>
 </div>
-<!-- 3. Sticky Top HUD Bar -->
 <header id="hud-header">
   <div class="hud-inner">
     <div class="brand-lockup">
@@ -1208,9 +269,12 @@
         </div>
       </div>
     </div>
-    <nav class="landmark-nav" aria-label="四大互動地標">
+    <nav class="landmark-nav" aria-label="互動導覽">
       <button class="landmark-btn active" data-landmark="0" onclick="switchLandmark(0)">
         <span class="idx">1</span> 📚 選書＆日期
+      </button>
+      <button class="landmark-btn" onclick="jumpToRoleCards()">
+        <span class="idx">🎩</span> 角色原則卡
       </button>
       <button class="landmark-btn" data-landmark="1" onclick="switchLandmark(1)">
         <span class="idx">2</span> 📅 日期選擇
@@ -1235,16 +299,15 @@
     </div>
   </div>
 </header>
-<!-- 4. Main Interactive Workspace -->
 <main id="main-shell">
-  <!-- Dynamic Landmark Banner -->
-  <section class="landmark-banner">
-    <div>
-      <div class="landmark-info-tag" id="banner-tag">LANDMARK 01 · NEBULA MONOLITH ARCHIVE</div>
-      <h2 class="landmark-info-title" id="banner-title">① 星雲選書＆日期聖殿 — 直觀日期勾選 × 候選書多人投票</h2>
-      <p class="landmark-info-desc" id="banner-desc">
-        沿用原版最直觀的「讀書會日期選擇」圓圈打勾表與 8 本候選書投票，五位核心成員（Jeff、Ruby、登正、忠誠、陳健）即時同步。
-      </p>
+  <section class="landmark-banner" style="padding:12px 18px;margin-bottom:16px;">
+    <div style="display:none;">
+      <div class="landmark-info-tag" id="banner-tag"></div>
+      <h2 class="landmark-info-title" id="banner-title"></h2>
+      <p class="landmark-info-desc" id="banner-desc"></p>
+    </div>
+    <div style="font-size:13.5px;color:var(--text-body);font-weight:600;">
+      👥 五位核心成員（Jeff、Ruby、登正、忠誠、陳健）· 場次表決 × 角色原則卡 × 選書即時同步
     </div>
     <div class="kpi-strip">
       <div class="kpi-chip">
@@ -1265,11 +328,7 @@
       </div>
     </div>
   </section>
-  <!-- ========================================================================
-       TAB 1: INTUITIVE DATE PICKER + BOOK VOTING (Exact book-vote-nextjs flow)
-       ======================================================================== -->
   <section class="tab-panel active" id="tab-0">
-    <!-- Intuitive Meeting Date Selector (Preserved from book-vote-nextjs.vercel.app) -->
     <div class="panel-card">
       <div class="section-head">
         <div class="section-title">📅 讀書會日期選擇（點選綠色圓圈即可打勾登記出席）</div>
@@ -1290,18 +349,30 @@
       </div>
       <div id="main-best-date-banner" class="best-date-info"></div>
     </div>
-    <!-- 5 Core Voter Chips -->
-    <div class="panel-card">
+    <div class="panel-card" id="role-cards-section">
       <div class="section-head">
-        <div class="section-title">👥 投票人（5 位讀書會核心成員 · 每人建議勾選 2～4 本書）</div>
+        <div>
+          <div class="section-title">🎩 白帽實證迭代 × 五成員原則角色卡（角度納為個人原則）</div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin-top:3px;">
+            將每位成員的「切入角度（Angle）」正式收斂為個人原則與白帽查核提問；點擊角色卡可切換主視角，並隨時新增／迭代個人原則。
+          </p>
+        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="ctrl-pill" onclick="resetRolePrinciples()">🔄 還原預設原則</button>
           <button class="ctrl-pill" onclick="copyTableToClipboard()">📋 複製統計表格</button>
           <button class="ctrl-pill" onclick="exportVoteJSON()">⬇ 匯出 JSON</button>
         </div>
       </div>
-      <div class="voter-grid" id="voter-grid"></div>
+      <div class="whitehat-stepper" id="whitehat-stepper"></div>
+      <div class="wh-stage-detail" id="wh-stage-detail"></div>
+      <div class="role-cards-grid" id="role-cards-grid"></div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(125,211,252,0.12);">
+        <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:8px;">
+          👥 <strong>選書投票進度速覽</strong>（每人建議勾選 2～4 本候選書，點選成員可連動角色卡與月曆視角）：
+        </div>
+        <div class="voter-grid" id="voter-grid"></div>
+      </div>
     </div>
-    <!-- Candidate Books + AI Filter -->
     <div class="panel-card">
       <div class="filter-bar">
         <div class="filter-pills" id="book-filter-pills">
@@ -1319,11 +390,7 @@
       <div class="book-grid" id="book-grid"></div>
     </div>
   </section>
-  <!-- ========================================================================
-       TAB 2: DEDICATED MEETING DATE SELECTOR + 5-MEMBER CALENDAR VIEW
-       ======================================================================== -->
   <section class="tab-panel" id="tab-1">
-    <!-- Primary: Original Intuitive Date Voting Table -->
     <div class="panel-card">
       <div class="section-head">
         <div class="section-title">📅 讀書會日期選擇（原版直觀表格 · 5 位核心成員即時同步）</div>
@@ -1344,7 +411,6 @@
       </div>
       <div id="tab2-best-date-banner" class="best-date-info"></div>
     </div>
-    <!-- Secondary: 5-Member Calendar Quick View (Only Jeff, Ruby, 登正, 忠誠, 陳健) -->
     <div class="panel-card">
       <div class="section-head">
         <div class="section-title">🗓️ 五成員月曆輔助檢視（僅限：Jeff、Ruby、登正、忠誠、陳健）</div>
@@ -1374,12 +440,8 @@
       <div class="calendar-months-grid" id="calendar-months-grid"></div>
     </div>
   </section>
-  <!-- ========================================================================
-       TAB 3: CONSENSUS LEADERBOARD & EXPORT (Unified Stats + CSV/JSON)
-       ======================================================================== -->
   <section class="tab-panel" id="tab-2">
     <div class="consensus-split">
-      <!-- Left: Candidate Date & Book Consensus Ranking -->
       <div class="panel-card">
         <div class="section-head">
           <div class="section-title">🔥 讀書會日期與選書共識排行</div>
@@ -1393,7 +455,6 @@
         </p>
         <div id="leaderboard-list"></div>
       </div>
-      <!-- Right: Specific Meeting Session Poll -->
       <div class="panel-card">
         <div class="section-head">
           <div class="section-title">🏆 讀書會日期選擇表決</div>
@@ -1410,12 +471,8 @@
       </div>
     </div>
   </section>
-  <!-- ========================================================================
-       TAB 4: FEATURED BOOK STUDY GARDEN (Rewire Neural Plasticity)
-       ======================================================================== -->
   <section class="tab-panel" id="tab-3">
     <div class="study-grid">
-      <!-- Left: Physiological Sigh 2-1-5s Pacer linked to 3D Canvas & Audio -->
       <div class="panel-card">
         <div class="section-head">
           <div class="section-title">🌬️ 當期共讀《神經可塑性》：生理性嘆息降載節拍器</div>
@@ -1437,7 +494,6 @@
           </div>
         </div>
       </div>
-      <!-- Right: Non-Negotiable 5 Daily Habits Tracker -->
       <div class="panel-card">
         <div class="section-head">
           <div class="section-title">🛡️ 第 21 天髓鞘化：不容商量五條二元微習慣打卡</div>
@@ -1451,16 +507,12 @@
     </div>
   </section>
 </main>
-<!-- Floating Exit Hint in Pure Canvas B-Roll Mode -->
 <button id="pure-canvas-hint" onclick="togglePureCanvas()">
   <span>🎥 純畫布觀景模式（可拖曳旋轉 3D 星雲 / 錄製 60fps B-Roll）</span>
   <strong style="color:var(--accent-cyan);">點擊或按 V 返回介面</strong>
 </button>
 <div id="toast"></div>
 <script>
-/* ============================================================================
-   PHASE 1 & 2: CRASH-GUARD ADAPTIVE QUALITY & LANDMARK DEFINITIONS
-   ============================================================================ */
 const GUARD_KEY = 'bookclub_hub_load_guard_v1';
 const QUALITY_KEY = 'bookclub_hub_quality_v1';
 let currentQuality = localStorage.getItem(QUALITY_KEY) || 'high';
@@ -1482,9 +534,9 @@ let currentQuality = localStorage.getItem(QUALITY_KEY) || 'high';
 const LANDMARKS = [
   {
     id: 0,
-    tag: 'LANDMARK 01 · NEBULA MONOLITH ARCHIVE',
-    title: '① 星雲選書＆日期聖殿 — 直觀日期勾選 × 候選書多人投票',
-    desc: '沿用原版最直觀的「讀書會日期選擇」圓圈打勾表與 8 本候選書投票，五位核心成員（Jeff、Ruby、登正、忠誠、陳健）即時同步。',
+    tag: 'BOOK CLUB UNIFIED HUB · WHITE-HAT ITERATION',
+    title: '讀書會選書 ＆ 日期投票 × 白帽實證角色卡',
+    desc: '五位核心成員（Jeff、Ruby、登正、忠誠、陳健）即時同步場次表決、候選書投票與個人原則角色卡。',
     cam: { x: 0, y: 8, z: -290, yaw: 0.15, pitch: 0.08 },
     hue: '#38bdf8',
     chimeFreq: 293.66 // D4
@@ -1492,8 +544,8 @@ const LANDMARKS = [
   {
     id: 1,
     tag: 'LANDMARK 02 · CHRONOS MEETING SELECTOR',
-    title: '② 讀書會日期選擇 — 原版直觀圓圈打勾表 × 五成員月曆',
-    desc: '完全保留原版讀書會日期選擇操作，成員鎖定為 Jeff、Ruby、登正、忠誠、陳健，一鍵打勾即時同步 Firebase。',
+    title: '② 讀書會日期選擇 — 圓圈打勾表 × 五成員月曆',
+    desc: '保留讀書會日期選擇操作，成員鎖定為 Jeff、Ruby、登正、忠誠、陳健，一鍵打勾即時同步 Firebase。',
     cam: { x: 45, y: -15, z: -265, yaw: 0.78, pitch: 0.22 },
     hue: '#34d399',
     chimeFreq: 369.99 // F#4
@@ -1517,15 +569,119 @@ const LANDMARKS = [
     chimeFreq: 587.33 // D5
   }
 ];
-/* ============================================================================
-   PHASE 4: UNIFIED DATA STATE & FIREBASE RTDB REAL-TIME SYNC
-   ============================================================================ */
 const RTDB_URL = 'https://books-by-monthly-default-rtdb.firebaseio.com/bookVote.json';
 const CORE_MEMBERS = ['Jeff', 'Ruby', '登正', '忠誠', '陳健'];
 const LOCAL_VOTE_KEY = 'bookclub_unified_vote_v3';
 const LOCAL_RSVP_KEY = 'bookclub_unified_rsvp_v3';
 const LOCAL_HABIT_KEY = 'bookclub_rewire_habits_v2';
-// Exact 0..7 index order matching book-vote-nextjs.vercel.app & Firebase RTDB
+const LOCAL_ROLE_KEY = 'bookclub_role_principles_v1';
+const WHITEHAT_STAGES = [
+  {
+    step: 'STAGE 01 · 白帽事實分級',
+    title: '🤍 證據與數據拆解 (A/B/C/D 級)',
+    summary: '先拿掉書中修辭與雞湯，將論點拆為 A/B 級（系統性回顧、神經/統計實證）與 C/D 級（作者軼事、待驗假說）。',
+    action: '目前焦點：《神經可塑性》前額葉降載與 21 天髓鞘化（A/B 級實證）vs 吸引力法則延伸敘事（C/D 級標記保留）。'
+  },
+  {
+    step: 'STAGE 02 · 五成員視角碰撞',
+    title: '🧭 成員角度納為原則角色卡',
+    summary: '五位核心成員以各自專屬的「切入角度（Angle）」與「個人原則（Principles）」對書籍進行五維度交叉詰問。',
+    action: '決策系統（Jeff）× 結構策展（Ruby）× 實務破冰（登正）× 節奏共感（忠誠）× 風險邊界（陳健）。'
+  },
+  {
+    step: 'STAGE 03 · 四席開會拍板',
+    title: '⚖️ 採用 ／ 保留 ／ 不採用',
+    summary: '仿照讀書會開會模式：只把通過白帽實證且具備「明早六點 2 分鐘可執行性」的處方列入當期採用清單。',
+    action: '決策原則：每人每次共讀只收斂 1～3 條二元可驗收微習慣，拒絕「全都要」導致第三週崩盤。'
+  },
+  {
+    step: 'STAGE 04 · 21 天覆盤寫回原則',
+    title: '🔄 實測回饋 → 角色卡原則迭代',
+    summary: '將兩週／21 天真實生活實測的成功與卡關數據，反向寫回每位成員下方的「個人原則角色卡」，形成跨書複利。',
+    action: '在下方任一成員角色卡輸入新原則並點擊「＋原則」，即可即時同步至雲端與所有成員畫面。'
+  }
+];
+const DEFAULT_ROLE_CARDS = {
+  'Jeff': {
+    seat: '決策與系統架構席',
+    hat: '🤍 白帽實證 × 🔵 藍帽系統',
+    color: 'rgba(56, 189, 248, 0.24)',
+    icon: '🧭',
+    angle: 'AI 多角平行查核 × Pre-mortem 事前驗屍 × 勞資與系統雙重視角',
+    prompt: '「拿掉修辭後，這本書的實證等級與因果機制是什麼？若三個月後執行失敗，最可能死在哪個盲點？」',
+    principles: [
+      '直覺只能觸發「要不要查」，不能決定「做不做」；先跑白帽數據分級再拍板。',
+      '所有行動方案必須定義二元驗收標準（Done / Not Done）與第三週崩點降級處方。',
+      '動工前必做 Pre-mortem 事前驗屍，把高風險假設攤在陽光下。'
+    ]
+  },
+  'Ruby': {
+    seat: '議題策展與結構收斂席',
+    hat: '🟢 綠帽策展 × 🔵 藍帽結構',
+    color: 'rgba(52, 211, 153, 0.24)',
+    icon: '✨',
+    angle: '截彎取直 × 全書核心提綱收斂 × 工作與生活原則對齊',
+    prompt: '「如何截彎取直，把整本書收斂成 3 個大家最有共鳴、能連結真實生活的核心提問？」',
+    principles: [
+      '截彎取直：過濾重複鋪陳的案例，直取書中最能觸發深度對話的結構骨架。',
+      '原則不是死板教條，而是讓工作與生活節奏可持續、不內耗的導航座標。',
+      '每次共讀都要提煉出能帶走、能與自身生命經驗對話的核心觀點。'
+    ]
+  },
+  '登正': {
+    seat: '實務落地與破冰行動席',
+    hat: '🟡 黃帽可行 × ⚫ 黑帽實測',
+    color: 'rgba(251, 191, 36, 0.24)',
+    icon: '⚡',
+    angle: '直球提問 × 真實生活場景壓力測試 × 明早六點最小可行行動',
+    prompt: '「如果明天早上六點就要實測這本書的一個方法，最小 2 分鐘動作是什麼？現實中哪裡最容易卡關？」',
+    principles: [
+      '理論再漂亮，不能轉化為明天早上 2 分鐘的具體動作，就只是紙上談兵。',
+      '直球對決：遇到聽起來太完美的理論，先放到真實職場與家庭場景做壓力測試。',
+      '破冰與行動優先：用最小摩擦啟動第 1 天，再靠環境設計撐過第 21 天。'
+    ]
+  },
+  '忠誠': {
+    seat: '節奏統籌與多元傾聽席',
+    hat: '🤍 白帽時程 × 🔴 紅帽共感',
+    color: 'rgba(167, 139, 250, 0.24)',
+    icon: '🕰️',
+    angle: '跨場次時程錨定 × 多元觀點包容傾聽 × 長期習慣穩健推進',
+    prompt: '「不同成員對這本書的直覺反應差異在哪？我們如何把這個新習慣融入每週固定的生活節奏？」',
+    principles: [
+      '穩定節奏勝過短期暴衝：把每次聚會時程與公告錨定好，讓團隊維持長期複利。',
+      '先完整傾聽不同成員的切入角度，再從差異中找出最大共識交集。',
+      '面對新觀點保持開放好奇，並以「能否長期穩定維持」作為最終檢驗標準。'
+    ]
+  },
+  '陳健': {
+    seat: '風險邊界與制度人性席',
+    hat: '⚫ 黑帽風險 × 🤍 白帽法理',
+    color: 'rgba(251, 113, 133, 0.24)',
+    icon: '⚖️',
+    angle: '契約與邊界把關 × 制度設計與人性真實面 × 共讀場域主理',
+    prompt: '「這個原則在極端壓力、利益衝突或人性惰性下會不會失效？它的安全邊界與停損點在哪裡？」',
+    principles: [
+      '看清制度背後的人性誘因：好原則必須在人性脆弱與高壓下依然守得住邊界。',
+      '先畫出最壞情況的風險底線（下行保護），再追求上行成長與突破。',
+      '跳出單一專業框架，從真實案例檢視規則、契約與人情的平衡點。'
+    ]
+  }
+};
+let currentWhiteHatStage = 1;
+let memberPrinciplesState = {};
+function initMemberPrinciples() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LOCAL_ROLE_KEY) || 'null'); } catch (e) {}
+  CORE_MEMBERS.forEach(m => {
+    if (saved && Array.isArray(saved[m]) && saved[m].length > 0) {
+      memberPrinciplesState[m] = [...saved[m]];
+    } else {
+      memberPrinciplesState[m] = [...DEFAULT_ROLE_CARDS[m].principles];
+    }
+  });
+}
+initMemberPrinciples();
 const DEFAULT_BOOKS = [
   {
     title: '世界上最神奇的24堂課：全世界唯一一本，因為揭露「致富秘訣」而被查禁的書！',
@@ -1569,7 +725,6 @@ const DEFAULT_BOOKS = [
     jev: { cat: '科技商業', conf: 96, rec: 3, fit: 3, spark: 88 }
   }
 ];
-// Initial Snapshot from Live RTDB (`books-by-monthly-default-rtdb`)
 let voteState = {
   books: DEFAULT_BOOKS,
   names: [...CORE_MEMBERS],
@@ -1584,16 +739,16 @@ let voteState = {
     [false, true, false, true, false, false]
   ],
   meetingDates: [
-    { date: '2026-10-30', label: '神經可塑性-2', votes: [true, true, true, false, true, false] },
+    { date: '2026-10-30', label: '神經可塑性-2', votes: [false, true, true, false, true, false] },
     { date: '2026-10-23', label: '神經可塑性-2', votes: [false, false, false, true, false, false] },
-    { date: '2026-11-06', label: '神經可塑性-2', votes: [false, false, false, true, false, false] }
+    { date: '2026-11-06', label: '神經可塑性-2', votes: [false, false, false, true, false, false] },
+    { date: '2026-11-27', label: '別對任何事情有反應', votes: [true, false, false, false, false, false] }
   ],
   deadline: '2026-11-27',
   updatedAt: new Date().toISOString()
 };
-// Strictly 5 Official Members (Jeff, Ruby, 登正, 忠誠, 陳健) — all mistaken test names removed
 let rsvpState = {
-  'Jeff': ['2026-10-30'],
+  'Jeff': ['2026-11-27'],
   'Ruby': ['2026-10-30'],
   '登正': ['2026-10-30'],
   '忠誠': ['2026-10-23', '2026-11-06'],
@@ -1609,8 +764,7 @@ function syncRsvpFromMeetingDates() {
     });
   });
   CORE_MEMBERS.forEach(m => {
-    const merged = new Set([...(rsvpState[m] || []), ...next[m]]);
-    rsvpState[m] = Array.from(merged).sort();
+    rsvpState[m] = next[m].sort();
   });
 }
 const HABIT_ITEMS = [
@@ -1625,7 +779,6 @@ let currentLandmark = 0;
 let currentBookFilter = 'all';
 let currentMember = CORE_MEMBERS.includes(localStorage.getItem('books_user_name')) ? localStorage.getItem('books_user_name') : 'Jeff';
 let calendarEra = 'current';
-// Load local cache if available
 try {
   const savedVote = JSON.parse(localStorage.getItem(LOCAL_VOTE_KEY) || 'null');
   if (savedVote && Array.isArray(savedVote.votes)) {
@@ -1638,7 +791,6 @@ try {
   }
 } catch (e) {}
 syncRsvpFromMeetingDates();
-// BroadcastChannel Cross-Tab Sync
 const syncChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('book_vote_sync') : null;
 if (syncChannel) {
   syncChannel.onmessage = (ev) => {
@@ -1656,12 +808,19 @@ function applyRemoteData(data) {
   if (Array.isArray(data.meetingDates)) {
     voteState.meetingDates = data.meetingDates;
   }
+  if (data.memberPrinciples && typeof data.memberPrinciples === 'object') {
+    CORE_MEMBERS.forEach(m => {
+      if (Array.isArray(data.memberPrinciples[m]) && data.memberPrinciples[m].length > 0) {
+        memberPrinciplesState[m] = [...data.memberPrinciples[m]];
+      }
+    });
+    localStorage.setItem(LOCAL_ROLE_KEY, JSON.stringify(memberPrinciplesState));
+  }
   voteState.deadline = data.deadline || null;
   syncRsvpFromMeetingDates();
   localStorage.setItem(LOCAL_VOTE_KEY, JSON.stringify(voteState));
   renderAll();
 }
-// Fetch Live Data from Firebase Realtime DB (books-by-monthly-default-rtdb)
 async function syncFromCloud() {
   let rtdbOk = false;
   try {
@@ -1685,7 +844,6 @@ async function syncFromCloud() {
   }
   renderAll();
 }
-// Real-time Server-Sent Events (SSE) + Polling on Firebase RTDB
 function startRealtimeSubscription() {
   try {
     if (typeof EventSource !== 'undefined') {
@@ -1708,7 +866,7 @@ async function pushVoteToCloud() {
   voteState.names = [...CORE_MEMBERS];
   syncRsvpFromMeetingDates();
   localStorage.setItem(LOCAL_VOTE_KEY, JSON.stringify(voteState));
-  // Keep 6-slot array in Firebase RTDB for 100% backward compatibility with book-vote-nextjs.vercel.app
+  localStorage.setItem(LOCAL_ROLE_KEY, JSON.stringify(memberPrinciplesState));
   const rtdbNames = [...CORE_MEMBERS, ''];
   const rtdbVotes = voteState.votes.map(row => {
     const arr = Array.from({ length: 6 }, (_, i) => i < 5 ? !!(row && row[i]) : false);
@@ -1723,6 +881,7 @@ async function pushVoteToCloud() {
     names: rtdbNames,
     votes: rtdbVotes,
     meetingDates: rtdbDates,
+    memberPrinciples: memberPrinciplesState,
     deadline: voteState.deadline || null,
     updatedAt: new Date().toISOString(),
     updatedBy: currentMember || 'Jeff'
@@ -1736,9 +895,6 @@ async function pushVoteToCloud() {
     });
   } catch (e) {}
 }
-/* ============================================================================
-   PHASE 3: PROCEDURAL WEB AUDIO ENGINE (D Major Pentatonic + Ambient Pad)
-   ============================================================================ */
 let audioCtx = null;
 let audioEnabled = false;
 let masterGain = null;
@@ -1750,7 +906,6 @@ function initOrResumeAudio() {
     masterGain = audioCtx.createGain();
     masterGain.gain.value = 0.18;
     masterGain.connect(audioCtx.destination);
-    // Subtle Warm Ambient Drone (D2 + A2 sine/triangle pad)
     const freqs = [73.42, 110.0, 146.83];
     freqs.forEach((f, i) => {
       const osc = audioCtx.createOscillator();
@@ -1807,11 +962,9 @@ function playPentatonicChime(freq = 440, duration = 0.42) {
   osc.start(now);
   osc.stop(now + duration + 0.03);
 }
-/* ============================================================================
-   UI RENDERING: VOTERS, BOOKS, CALENDAR, LEADERBOARD, HABITS
-   ============================================================================ */
 function renderAll() {
   renderKPIs();
+  renderWhiteHatAndRoleCards();
   renderVoters();
   renderBooks();
   renderMemberChips();
@@ -1819,12 +972,137 @@ function renderAll() {
   renderLeaderboardAndSessions();
   renderHabits();
 }
+function renderWhiteHatAndRoleCards() {
+  const stepperEl = document.getElementById('whitehat-stepper');
+  const detailEl = document.getElementById('wh-stage-detail');
+  const gridEl = document.getElementById('role-cards-grid');
+  if (!stepperEl || !gridEl) return;
+  stepperEl.innerHTML = WHITEHAT_STAGES.map((st, idx) => `
+    <button type="button" class="wh-step ${idx === currentWhiteHatStage ? 'active' : ''}" onclick="setWhiteHatStage(${idx})">
+      <span class="wh-step-tag">${escapeHtml(st.step)}</span>
+      <div class="wh-step-title">${escapeHtml(st.title)}</div>
+      <div class="wh-step-desc">${escapeHtml(st.summary)}</div>
+    </button>
+  `).join('');
+  const curStage = WHITEHAT_STAGES[currentWhiteHatStage] || WHITEHAT_STAGES[0];
+  if (detailEl) {
+    detailEl.innerHTML = `
+      <div>
+        <strong style="color:var(--accent-emerald);">${escapeHtml(curStage.title)}：</strong>
+        <span>${escapeHtml(curStage.action)}</span>
+      </div>
+      <span style="font-family:var(--font-mono);font-size:11.5px;color:var(--accent-cyan);">目前主視角：${escapeHtml(currentMember)} (${escapeHtml(DEFAULT_ROLE_CARDS[currentMember]?.seat || '')})</span>
+    `;
+  }
+  gridEl.innerHTML = CORE_MEMBERS.map((name, mIdx) => {
+    const meta = DEFAULT_ROLE_CARDS[name];
+    const principles = memberPrinciplesState[name] || meta.principles;
+    const isActive = name === currentMember;
+    const votedBooks = voteState.books
+      .filter((_, bIdx) => voteState.votes[bIdx] && voteState.votes[bIdx][mIdx])
+      .map(b => b.title.length > 10 ? b.title.slice(0, 10) + '…' : b.title);
+    const principlesHtml = principles.map((p, pIdx) => `
+      <li>
+        <span><strong style="color:var(--accent-cyan);font-family:var(--font-mono);">P${pIdx + 1}.</strong> ${escapeHtml(p)}</span>
+        ${principles.length > 1 ? `<button type="button" class="btn-remove" style="font-size:11px;padding:0 4px;" onclick="removeMemberPrinciple('${escapeHtml(name)}', ${pIdx})" title="刪除此原則">✕</button>` : ''}
+      </li>
+    `).join('');
+    return `
+      <div class="role-card ${isActive ? 'active-role' : ''}">
+        <div>
+          <div class="role-header" style="cursor:pointer;" onclick="selectMember('${escapeHtml(name)}')">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div class="role-avatar" style="background:${meta.color};">${meta.icon}</div>
+              <div>
+                <div class="role-name">${escapeHtml(name)}</div>
+                <div class="role-seat">${escapeHtml(meta.seat)}</div>
+              </div>
+            </div>
+            <span style="font-family:var(--font-mono);font-size:10.5px;color:${isActive ? 'var(--accent-emerald)' : 'var(--text-muted)'};">
+              ${isActive ? '● 視角中' : '切換'}
+            </span>
+          </div>
+          <div style="margin:8px 0;">
+            <span class="role-hat-badge">${escapeHtml(meta.hat)}</span>
+          </div>
+          <div class="role-angle-box" style="margin-bottom:8px;">
+            <strong style="color:var(--accent-cyan);display:block;font-size:11px;margin-bottom:2px;">🎯 切入角度（納為原則基底）：</strong>
+            ${escapeHtml(meta.angle)}
+          </div>
+          <div style="font-size:11.5px;font-weight:700;color:#fff;margin-bottom:5px;">
+            📜 個人原則 (${principles.length} 條)：
+          </div>
+          <ul class="role-principles-list" style="margin-bottom:8px;">
+            ${principlesHtml}
+          </ul>
+          <div class="role-prompt-box">
+            <strong style="display:block;font-size:10.5px;color:var(--accent-emerald);margin-bottom:2px;">🔍 白帽實證提問：</strong>
+            ${escapeHtml(meta.prompt)}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">
+            📚 已投候選：${votedBooks.length > 0 ? votedBooks.map(escapeHtml).join('、') : '尚未勾選'}
+          </div>
+          <div class="role-add-row">
+            <input type="text" id="role-input-${mIdx}" class="input-field" placeholder="新增 ${escapeHtml(name)} 的原則/角度..."
+              onkeydown="if(event.key==='Enter') addMemberPrinciple('${escapeHtml(name)}', ${mIdx})">
+            <button type="button" class="role-add-btn" onclick="addMemberPrinciple('${escapeHtml(name)}', ${mIdx})">＋原則</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+function setWhiteHatStage(idx) {
+  currentWhiteHatStage = idx;
+  playPentatonicChime(440 + idx * 55, 0.28);
+  pulse3DBurst();
+  renderWhiteHatAndRoleCards();
+}
+function addMemberPrinciple(memberName, mIdx) {
+  const input = document.getElementById(`role-input-${mIdx}`);
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) { showToast('⚠️ 請輸入要納入角色卡的原則或切入角度'); return; }
+  if (!Array.isArray(memberPrinciplesState[memberName])) {
+    memberPrinciplesState[memberName] = [...DEFAULT_ROLE_CARDS[memberName].principles];
+  }
+  memberPrinciplesState[memberName].push(val);
+  input.value = '';
+  playPentatonicChime(587.33, 0.35);
+  pulse3DBurst();
+  pushVoteToCloud();
+  renderWhiteHatAndRoleCards();
+  showToast(`🎩 已為 ${memberName} 新增原則並同步雲端`);
+}
+function removeMemberPrinciple(memberName, pIdx) {
+  if (!Array.isArray(memberPrinciplesState[memberName]) || memberPrinciplesState[memberName].length <= 1) return;
+  memberPrinciplesState[memberName].splice(pIdx, 1);
+  playPentatonicChime(329.63, 0.25);
+  pushVoteToCloud();
+  renderWhiteHatAndRoleCards();
+  showToast(`已移除 ${memberName} 的單條原則`);
+}
+function resetRolePrinciples() {
+  CORE_MEMBERS.forEach(m => {
+    memberPrinciplesState[m] = [...DEFAULT_ROLE_CARDS[m].principles];
+  });
+  playPentatonicChime(440, 0.3);
+  pushVoteToCloud();
+  renderWhiteHatAndRoleCards();
+  showToast('🔄 已還原五位成員預設原則角色卡');
+}
+function jumpToRoleCards() {
+  if (currentLandmark !== 0) switchLandmark(0);
+  const el = document.getElementById('role-cards-section');
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function renderKPIs() {
   const totalBooks = voteState.books.length;
   const totalVotes = voteState.votes.reduce((acc, row) => acc + (row || []).slice(0, 5).filter(Boolean).length, 0);
   const activeVoters = CORE_MEMBERS.length; // 5 official members
   const sessionCount = (voteState.meetingDates || []).length;
-  // Compute best meeting date from meetingDates
   let bestSession = null;
   let maxSessionVotes = -1;
   (voteState.meetingDates || []).forEach(s => {
@@ -1878,7 +1156,6 @@ function renderBooks() {
   const stars = ['', '⭐', '⭐⭐', '⭐⭐⭐'];
   const recDesc = ['', '普通', '推薦', '強烈推薦'];
   const fitDesc = ['', '話題有限', '可討論', '深度對話'];
-  // Sort display so highest-voted books appear first while keeping original bIdx for 1-to-1 Firebase RTDB mapping
   const indexedBooks = voteState.books.map((book, bIdx) => ({ book, bIdx, score: totals[bIdx] }));
   indexedBooks.sort((a, b) => b.score - a.score || a.bIdx - b.bIdx);
   indexedBooks.forEach(({ book, bIdx, score }) => {
@@ -1977,9 +1254,6 @@ function updateDeadline(val) {
   renderAll();
   showToast(val ? `📅 投票截止日已設為 ${val}` : '已清除投票截止日');
 }
-/* ============================================================================
-   TAB 2: 5-MEMBER CALENDAR LOGIC (Strictly Jeff, Ruby, 登正, 忠誠, 陳健)
-   ============================================================================ */
 function renderMemberChips() {
   const wrap = document.getElementById('member-chips');
   if (!wrap) return;
@@ -2089,9 +1363,6 @@ function toggleCalendarDate(dateStr) {
   pushVoteToCloud();
   renderAll();
 }
-/* ============================================================================
-   INTUITIVE MEETING DATE TABLE (Exact book-vote-nextjs.vercel.app UI)
-   ============================================================================ */
 const CHECK_SVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
 function buildIntuitiveDateTableHtml() {
   const sessions = voteState.meetingDates || [];
@@ -2157,7 +1428,6 @@ function renderLeaderboardAndSessions() {
     const el = document.getElementById(id);
     if (el) el.innerHTML = bannerHtml;
   });
-  // Render Consensus Leaderboard in Tab 3
   const dayNames = ['週日', '週一', '週二', '週三', '週四', '週五', '週六'];
   const listEl = document.getElementById('leaderboard-list');
   if (!listEl) return;
@@ -2291,9 +1561,6 @@ function exportCalendarCSV() {
   playPentatonicChime(739.99, 0.4);
   showToast('📥 已匯出 UTF-8 Excel/CSV 統計報表！');
 }
-/* ============================================================================
-   TAB 4: REWIRE BREATHING PACER & NON-NEGOTIABLE 5 HABITS
-   ============================================================================ */
 let breathTimer = null;
 let breathStep = 0;
 function toggleBreathPacer() {
@@ -2362,9 +1629,6 @@ function toggleHabit(idx) {
   pulse3DBurst();
   renderHabits();
 }
-/* ============================================================================
-   NAVIGATION, PORTAL DISMISSAL, QUALITY & PURE CANVAS MODE
-   ============================================================================ */
 function enterHub(landmarkIdx = 0) {
   document.body.classList.remove('portal-active');
   initOrResumeAudio();
@@ -2376,8 +1640,9 @@ function switchLandmark(idx) {
   document.getElementById('banner-tag').textContent = lm.tag;
   document.getElementById('banner-title').textContent = lm.title;
   document.getElementById('banner-desc').textContent = lm.desc;
-  document.querySelectorAll('.landmark-btn').forEach((btn, i) => {
-    btn.classList.toggle('active', i === idx);
+  document.querySelectorAll('.landmark-btn').forEach((btn) => {
+    const bIdx = btn.dataset.landmark !== undefined ? Number(btn.dataset.landmark) : -1;
+    btn.classList.toggle('active', bIdx === idx);
   });
   document.querySelectorAll('.tab-panel').forEach((panel, i) => {
     panel.classList.toggle('active', i === idx);
@@ -2415,9 +1680,6 @@ window.addEventListener('keydown', (e) => {
     toggleBreathPacer();
   }
 });
-/* ============================================================================
-   PHASE 2: ZERO-ASSET PROCEDURAL 3D ENGINE (4 Landmarks + Interactive Pulse)
-   ============================================================================ */
 const canvas = document.getElementById('ambient-canvas');
 const ctx = canvas.getContext('2d');
 let width = window.innerWidth;
@@ -2473,7 +1735,6 @@ window.addEventListener('pointermove', (e) => {
 });
 window.addEventListener('pointerup', () => { dragging = false; });
 function project3D(px, py, pz) {
-  // Rotate around Y (yaw) and X (pitch)
   const cosY = Math.cos(cam.yaw), sinY = Math.sin(cam.yaw);
   const cosP = Math.cos(cam.pitch), sinP = Math.sin(cam.pitch);
   const x1 = px * cosY - pz * sinY;
@@ -2496,20 +1757,17 @@ let firstFrameCleared = false;
 function render3DLoop(now) {
   const t = (now - startTime) * 0.001;
   burstEnergy *= 0.94;
-  // Smooth camera interpolation
   cam.x += (targetCam.x - cam.x) * 0.05;
   cam.y += (targetCam.y - cam.y) * 0.05;
   cam.z += (targetCam.z - cam.z) * 0.05;
   cam.yaw += (targetCam.yaw + Math.sin(t * 0.22) * 0.12 - cam.yaw) * 0.04;
   cam.pitch += (targetCam.pitch + Math.cos(t * 0.18) * 0.05 - cam.pitch) * 0.04;
   ctx.clearRect(0, 0, width, height);
-  // Draw central landmark geometry based on currentLandmark
   const projectedNodes = [];
   particles.forEach((p, idx) => {
     const angle = t * (breathTimer ? 0.12 : 0.28) + p.phase;
     let gx = p.x, gy = p.y, gz = p.z;
     if (currentLandmark === 0) {
-      // Landmark 1: 8 Orbital Book Monolith Rings
       const ring = idx % 8;
       const r = 55 + ring * 16 + burstEnergy * 18;
       const a = angle + (idx * 0.25);
@@ -2517,7 +1775,6 @@ function render3DLoop(now) {
       gz = Math.sin(a) * r;
       gy = Math.sin(a * 2 + ring) * 28;
     } else if (currentLandmark === 1) {
-      // Landmark 2: Astronomical Calendar Astrolabe Grid
       const ring = (idx % 5) + 1;
       const r = ring * 34;
       const a = angle * (ring % 2 === 0 ? 1 : -1) + idx;
@@ -2525,7 +1782,6 @@ function render3DLoop(now) {
       gy = Math.sin(a) * r * 0.65;
       gz = Math.cos(idx * 0.5 + t) * 35;
     } else if (currentLandmark === 2) {
-      // Landmark 3: Golden Consensus Pyramid
       const layer = (idx % 6) / 6;
       const r = (1 - layer) * 135 + 15;
       const a = angle + idx * 1.57;
@@ -2533,7 +1789,6 @@ function render3DLoop(now) {
       gz = Math.sin(a) * r;
       gy = (0.45 - layer) * 150;
     } else {
-      // Landmark 4: Rewire Double-Helix + 5 Myelin Sanctuary Rings
       const strand = idx % 2 === 0 ? 1 : -1;
       const h = ((idx / particles.length) - 0.5) * 220;
       const a = h * 0.045 + t * (breathTimer ? 0.45 : 0.9) + (strand > 0 ? 0 : Math.PI);
@@ -2547,7 +1802,6 @@ function render3DLoop(now) {
       projectedNodes.push({ ...proj, color: p.color, size: p.size });
     }
   });
-  // Connect nearby nodes with neural/constellation filaments
   ctx.lineWidth = 0.85;
   const maxConnect = currentQuality === 'low' ? 28 : 55;
   for (let i = 0; i < Math.min(projectedNodes.length, maxConnect); i++) {
@@ -2565,7 +1819,6 @@ function render3DLoop(now) {
       }
     }
   }
-  // Draw glowing particles
   projectedNodes.forEach(n => {
     const r = Math.max(1.2, n.size * n.scale * (1 + burstEnergy * 0.5));
     ctx.fillStyle = n.color;
@@ -2579,9 +1832,6 @@ function render3DLoop(now) {
   }
   requestAnimationFrame(render3DLoop);
 }
-/* ============================================================================
-   UTILITIES & INITIALIZATION
-   ============================================================================ */
 function escapeHtml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;')
